@@ -1,1 +1,73 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+// Strava API credentials
+const clientId = '114185';
+const clientSecret = 'a53cac2c28d6a206c8615162121e1f398cc018c7';
 
+// OAuth2 settings
+const redirectUri = 'https://github.com/meeeeeeeep1/haveniscool/blob/main/strava/api-test.html'; // Change this to your redirect URI
+const responseType = 'code';
+
+// Generate the authorization URL
+const authorizationUrl = `https://www.strava.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=${responseType}&scope=read_all`;
+
+// Open the Strava authorization page in a new window
+window.open(authorizationUrl, '_blank');
+  
+// Handle the callback from Strava after the user authorizes the app
+function handleStravaCallback() {
+  const code = new URLSearchParams(window.location.search).get('code');
+  
+  if (code) {
+    // Exchange the code for an access token
+    fetch('https://www.strava.com/api/v3/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code: code,
+        grant_type: 'authorization_code',
+      }),
+    })
+    .then(response => response.json())
+    .then(data => {
+      const accessToken = data.access_token;
+      console.log('Access Token:', accessToken);
+      
+      // Now you can use the accessToken to make API requests to Strava
+      // For example, fetch the athlete's activities:
+      fetch('https://www.strava.com/api/v3/athlete/activities', {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        }
+      })
+      .then(response => response.json())
+      .then(activities => {
+        console.log('Activities:', activities);
+      })
+      .catch(error => {
+        console.error('Error fetching activities:', error);
+      });
+    })
+    .catch(error => {
+      console.error('Error exchanging code for access token:', error);
+    });
+  } else {
+    console.error('Authorization code not found in URL');
+  }
+}
+
+// Call the handleStravaCallback function when your redirect URI is hit
+// You can use a server-side route for this purpose
+// For this example, we're assuming the redirect URI is "http://localhost"
+if (window.location.href.startsWith(redirectUri)) {
+  handleStravaCallback();
+}
+</script>
+</body>
+</html>
